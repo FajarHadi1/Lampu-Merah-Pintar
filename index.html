@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Traffic Light - Simulator Lampu Merah Adaptif Berbasis AI</title>
+  <meta name="description" content="Simulasi Interaktif Perbandingan Lampu Lalu Lintas Konvensional vs Lampu Pintar Adaptif dengan Deep Learning & Bobot SMP">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-top-row">
+        <div class="header-brand">
+          <div class="brand-badge">
+            <span class="pulse-dot"></span>
+            <span>AI ITS Simulator</span>
+          </div>
+          <h1 class="brand-title">Lampu Merah Pintar <span>(Adaptive ATSC)</span></h1>
+        </div>
+        <button class="btn btn-devhub" id="btn-open-devhub">
+          <span>📚</span> Dev Hub & Docs
+        </button>
+      </div>
+      <p class="header-subtitle">
+        Perbandingan langsung sistem <strong>Fixed-Time (Statis)</strong> vs <strong>Adaptive Deep Learning</strong> dengan pembobotan Satuan Mobil Penumpang (SMP) khas Indonesia.
+      </p>
+      <div class="header-stats-banner">
+        <div class="banner-item">
+          <span class="banner-label">Efisiensi Waktu Tunggu</span>
+          <span class="banner-value highlight" id="global-efficiency">+0%</span>
+        </div>
+        <div class="banner-item">
+          <span class="banner-label">Throughput Tambahan</span>
+          <span class="banner-value" id="global-throughput-diff">+0 Kendaraan</span>
+        </div>
+        <div class="banner-item">
+          <span class="banner-label">Status Deteksi CCTV</span>
+          <span class="banner-value active-badge" id="cctv-status-badge">AI Active (YOLOv11)</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace: Split-Screen Simulation -->
+    <main class="simulations-grid">
+      <!-- Panel 1: Konvensional (Fixed Timer) -->
+      <section class="sim-panel" id="panel-conventional">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <span class="tag tag-conventional">Sistem Konvensional</span>
+            <h2>Fixed-Time Controller</h2>
+          </div>
+          <div class="signal-hud" id="hud-conventional">
+            <div class="active-phase-indicator">
+              <span class="hud-label">Fase Aktif:</span>
+              <span class="hud-phase" id="conv-active-lane">UTARA</span>
+            </div>
+            <div class="timer-display">
+              <span class="timer-num" id="conv-timer">30</span>
+              <span class="timer-unit">detik</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="canvas-wrapper">
+          <canvas id="canvas-conventional" width="560" height="560"></canvas>
+          <div class="canvas-overlay-badges">
+            <span class="canvas-badge badge-red">Fixed 30s Tiap Lajur</span>
+          </div>
+        </div>
+
+        <!-- Metrik Panel Konvensional -->
+        <div class="panel-metrics">
+          <div class="metric-card">
+            <span class="metric-label">Kendaraan Lewat</span>
+            <span class="metric-value" id="conv-throughput">0</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Rata-rata Menunggu</span>
+            <span class="metric-value warn" id="conv-avg-wait">0.0s</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Antrian Maksimal</span>
+            <span class="metric-value" id="conv-max-queue">0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel 2: Lampu Pintar Adaptif (Deep Learning) -->
+      <section class="sim-panel panel-smart" id="panel-adaptive">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <span class="tag tag-adaptive">Sistem Pintar AI</span>
+            <h2>Adaptive ATSC Controller</h2>
+          </div>
+          <div class="signal-hud" id="hud-adaptive">
+            <div class="active-phase-indicator">
+              <span class="hud-label">Fase Aktif:</span>
+              <span class="hud-phase smart-phase" id="smart-active-lane">UTARA</span>
+            </div>
+            <div class="timer-display smart-timer">
+              <span class="timer-num" id="smart-timer">--</span>
+              <span class="timer-unit">detik</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="canvas-wrapper">
+          <canvas id="canvas-adaptive" width="560" height="560"></canvas>
+          <div class="canvas-overlay-badges">
+            <span class="canvas-badge badge-green" id="smart-dynamic-status">Densitas: Adaptif</span>
+            <span class="canvas-badge badge-ambulance hidden" id="ambulance-alert-badge">🚨 AMBULANS PRIORITAS!</span>
+          </div>
+        </div>
+
+        <!-- Metrik Panel Adaptif -->
+        <div class="panel-metrics">
+          <div class="metric-card">
+            <span class="metric-label">Kendaraan Lewat</span>
+            <span class="metric-value success" id="smart-throughput">0</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Rata-rata Menunggu</span>
+            <span class="metric-value success" id="smart-avg-wait">0.0s</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Beban Antrian (SMP)</span>
+            <span class="metric-value" id="smart-current-smp">0.0</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Control Center & Scenario Settings -->
+    <section class="control-center">
+      <div class="control-section-header">
+        <h3>Pusat Kendali & Pengaturan Skenario Lalu Lintas</h3>
+        <p>Atur kepadatan masing-masing arah untuk membuktikan keunggulan sistem adaptif saat terjadi ketimpangan antrian.</p>
+      </div>
+
+      <div class="control-grid">
+        <!-- Preset Skenario Cepat -->
+        <div class="control-card">
+          <h4>Pilih Skenario Siap Pakai</h4>
+          <div class="preset-buttons">
+            <button class="btn btn-preset active" id="btn-preset-morning" data-scenario="morning">
+              🌅 Pagi Hari (Utara Sangat Padat)
+            </button>
+            <button class="btn btn-preset" id="btn-preset-balanced" data-scenario="balanced">
+              ⚖️ Lalu Lintas Seimbang
+            </button>
+            <button class="btn btn-preset" id="btn-preset-evening" data-scenario="evening">
+              🌆 Sore Pulang Kantor (Selatan & Timur)
+            </button>
+            <button class="btn btn-preset" id="btn-preset-night" data-scenario="night">
+              🌙 Malam Sepi
+            </button>
+          </div>
+        </div>
+
+        <!-- Slider Kepadatan per Lajur -->
+        <div class="control-card">
+          <h4>Kepadatan Kendaraan per Lajur (Spawn Rate)</h4>
+          <div class="sliders-container">
+            <div class="slider-group">
+              <div class="slider-label">
+                <span>⬆️ Lajur Utara</span>
+                <span class="slider-val" id="val-rate-north">Tinggi (80%)</span>
+              </div>
+              <input type="range" id="slider-north" min="0" max="100" value="85" class="custom-slider">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-label">
+                <span>⬇️ Lajur Selatan</span>
+                <span class="slider-val" id="val-rate-south">Sedang (40%)</span>
+              </div>
+              <input type="range" id="slider-south" min="0" max="100" value="40" class="custom-slider">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-label">
+                <span>➡️ Lajur Timur</span>
+                <span class="slider-val" id="val-rate-east">Rendah (15%)</span>
+              </div>
+              <input type="range" id="slider-east" min="0" max="100" value="15" class="custom-slider">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-label">
+                <span>⬅️ Lajur Barat</span>
+                <span class="slider-val" id="val-rate-west">Rendah (20%)</span>
+              </div>
+              <input type="range" id="slider-west" min="0" max="100" value="20" class="custom-slider">
+            </div>
+          </div>
+        </div>
+
+        <!-- Aksi Spesial & Darurat -->
+        <div class="control-card">
+          <h4>Aksi Darurat & Tampilan AI</h4>
+          <div class="special-actions">
+            <button class="btn btn-emergency" id="btn-spawn-ambulance">
+              🚑 Kirim Ambulans di Lajur Terpadat
+            </button>
+            <p class="action-hint">Menguji kemampuan *Emergency Override* untuk memotong fase lampu seketika.</p>
+
+            <div class="toggle-row">
+              <label class="switch-container">
+                <input type="checkbox" id="toggle-yolo-overlay" checked>
+                <span class="switch-slider"></span>
+              </label>
+              <span class="toggle-text">Tampilkan Bounding Box AI & Poligon Antrian (CCTV Mode)</span>
+            </div>
+
+            <div class="action-buttons-group">
+              <button class="btn btn-secondary" id="btn-pause-toggle">⏸️ Jeda Simulasi</button>
+              <button class="btn btn-danger" id="btn-reset-sim">🔄 Reset Simulasi</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Bobot SMP Indonesia -->
+      <div class="smp-info-bar">
+        <div class="smp-title">
+          <span>ℹ️ Standar Bobot Satuan Mobil Penumpang (SMP) yang Diterapkan:</span>
+        </div>
+        <div class="smp-badges">
+          <span class="smp-badge">🏍️ Sepeda Motor: <strong>0.30 SMP</strong></span>
+          <span class="smp-badge">🚗 Mobil Pribadi: <strong>1.00 SMP</strong></span>
+          <span class="smp-badge">🚌 Bus / Truk: <strong>2.20 SMP</strong></span>
+          <span class="smp-badge alert">🚑 Ambulans: <strong>Prioritas Mutlak</strong></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>Rancang Bangun Sistem Lampu Merah Pintar Adaptif &copy; 2026. Dikembangkan untuk efisiensi mobilitas perkotaan.</p>
+    </footer>
+  </div>
+
+  <!-- Developer Hub & Documentation Modal -->
+  <div class="modal-backdrop hidden" id="modal-devhub">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-tag">Engineering Center</div>
+          <h2>📚 Developer Hub & Dokumentasi Teknis</h2>
+          <p class="modal-desc">Spesifikasi komputasi, perbandingan model Deep Learning, formulasi matematika ATSC, dan panduan hardware.</p>
+        </div>
+        <button class="btn-close-modal" id="btn-close-devhub" title="Tutup Modal">&times;</button>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="modal-tabs">
+        <button class="modal-tab active" data-tab="tab-ai-models">🧠 Model AI (v8 vs v11)</button>
+        <button class="modal-tab" data-tab="tab-math-smp">📐 Formulasi SMP & Waktu</button>
+        <button class="modal-tab" data-tab="tab-hardware">🔌 Hardware & CCTV Edge</button>
+        <button class="modal-tab" data-tab="tab-cli-api">💻 CLI & Telemetri API</button>
+      </div>
+
+      <!-- Tab Contents -->
+      <div class="modal-body">
+        <!-- Tab 1: Model AI -->
+        <div class="tab-pane active" id="tab-ai-models">
+          <h3>Komparasi Teknis Arsitektur: YOLOv8 vs YOLOv11</h3>
+          <p>Sistem ini dirancang mendukung kedua generasi model deteksi objek dari Ultralytics secara fleksibel:</p>
+          <div class="table-responsive">
+            <table class="tech-table">
+              <thead>
+                <tr>
+                  <th>Spesifikasi</th>
+                  <th>YOLOv8 Nano (yolov8n)</th>
+                  <th>YOLOv11 Nano (yolo11n)</th>
+                  <th>Dampak pada Lampu Lalu Lintas</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Tahun Rilis</strong></td>
+                  <td>2023 (Battle-tested)</td>
+                  <td>2024 (Generasi Terbaru)</td>
+                  <td>YOLOv11 membawa optimasi arsitektur mutakhir</td>
+                </tr>
+                <tr>
+                  <td><strong>Parameter</strong></td>
+                  <td>3.2 Juta</td>
+                  <td><span class="badge-accent">2.6 Juta (-19%)</span></td>
+                  <td>Lebih hemat RAM & VRAM di Edge Device</td>
+                </tr>
+                <tr>
+                  <td><strong>Beban Komputasi</strong></td>
+                  <td>8.7 GFLOPs</td>
+                  <td><span class="badge-accent">6.5 GFLOPs (-25%)</span></td>
+                  <td>Mengurangi panas & konsumsi daya Mini PC</td>
+                </tr>
+                <tr>
+                  <td><strong>mAP50-95 (COCO)</strong></td>
+                  <td>37.3%</td>
+                  <td><span class="badge-accent">39.5% (+2.2%)</span></td>
+                  <td>Lebih tajam mendeteksi motor dari jarak jauh</td>
+                </tr>
+                <tr>
+                  <td><strong>Arsitektur Blok</strong></td>
+                  <td>C2f</td>
+                  <td>C3k2 + C2PSA Attention</td>
+                  <td>Pemisahan objek saat motor berkerumun padat</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="tip-box">
+            <strong>💡 Rekomendasi:</strong> Gunakan <code>yolo11n.pt</code> untuk performa deteksi mutakhir dengan parameter lebih ringkas. Gunakan <code>yolov8n.pt</code> jika target hardware membutuhkan kompatibilitas edge warisan yang sudah lama teruji.
+          </div>
+        </div>
+
+        <!-- Tab 2: Formulasi Matematika -->
+        <div class="tab-pane" id="tab-math-smp">
+          <h3>Formulasi Matematika Adaptive Traffic Signal Control (ATSC)</h3>
+          
+          <div class="formula-card">
+            <h4>1. Pembobotan Satuan Mobil Penumpang (SMP / PCU)</h4>
+            <p>Mencegah bias jumlah kepala kendaraan dengan bobot ruang jalan riil:</p>
+            <div class="code-box">
+              D_i = &sum; (N_{i,k} &times; W_k)
+            </div>
+            <ul>
+              <li><strong>Sepeda Motor:</strong> 0.30 SMP (luas kecil, akselerasi awal lincah)</li>
+              <li><strong>Mobil Pribadi:</strong> 1.00 SMP (standar acuan ruang jalan)</li>
+              <li><strong>Bus & Truk:</strong> 2.20 SMP (panjang dan lambat berakselerasi)</li>
+            </ul>
+          </div>
+
+          <div class="formula-card">
+            <h4>2. Alokasi Durasi Hijau Proporsional</h4>
+            <div class="code-box">
+              T_green = clamp( T_min + (D_i / &sum; D) &times; (T_max - T_min), T_min, T_max )
+            </div>
+            <p>Di mana <code>T_min = 10 detik</code>, <code>T_max = 60 detik</code>, <code>Yellow = 3 detik</code>, dan <code>All-Red = 1.5 detik</code>.</p>
+          </div>
+
+          <div class="formula-card">
+            <h4>3. Early Green Cutoff & Anti-Starvation</h4>
+            <ul>
+              <li><strong>Early Cutoff:</strong> Jika antrian lajur aktif sudah 0 dan durasi &gt; T_min, sisa lampu hijau langsung dipangkas ke kuning untuk menghemat waktu.</li>
+              <li><strong>Starvation Protection:</strong> Jika lajur sepi menunggu &gt; 80 detik, lajur tersebut diprioritaskan di siklus berikutnya tanpa tertinggal.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tab 3: Hardware & CCTV -->
+        <div class="tab-pane" id="tab-hardware">
+          <h3>Spesifikasi Perangkat Keras & Instalasi Lapangan</h3>
+          
+          <div class="hardware-grid">
+            <div class="hw-card">
+              <h4>📷 Kamera CCTV Lalu Lintas</h4>
+              <ul>
+                <li><strong>Protokol:</strong> RTSP H.264/H.265, ONVIF Profile S</li>
+                <li><strong>Resolusi:</strong> 1080p @ 25-30 FPS</li>
+                <li><strong>Fitur Wajib:</strong> WDR &ge; 120 dB (cegah silau malam), IR Night Vision 50m</li>
+                <li><strong>Lensa:</strong> Varifocal 2.8 - 12mm</li>
+              </ul>
+            </div>
+
+            <div class="hw-card">
+              <h4>⚡ Edge Computing Device</h4>
+              <ul>
+                <li><strong>Rekomendasi Utama:</strong> NVIDIA Jetson Orin Nano (8GB)</li>
+                <li><strong>Alternatif:</strong> Intel NUC / Mini PC Intel N100 (OpenVINO)</li>
+                <li><strong>Daya:</strong> 7W - 15W hemat energi, tahan cuaca outdoor</li>
+              </ul>
+            </div>
+
+            <div class="hw-card">
+              <h4>🚦 Controller & Relay Interface</h4>
+              <ul>
+                <li><strong>Modul:</strong> Modbus RS485 Relay / Isolated GPIO Optocoupler</li>
+                <li><strong>Mekanisme Fail-Safe:</strong> Jika komputer mati, switch otomatis beralih ke analog timer statis konvensional (tidak akan mati lampu).</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: CLI & API -->
+        <div class="tab-pane" id="tab-cli-api">
+          <h3>Perintah CLI Pipeline Python & Skema Data API</h3>
+
+          <div class="cli-block">
+            <h4>Perintah Menjalankan AI dengan YOLOv11:</h4>
+            <pre><code>python3 main_cv.py --source sample_traffic.mp4 --model yolo11n.pt --output output_detected.mp4</code></pre>
+          </div>
+
+          <div class="cli-block">
+            <h4>Perintah Menjalankan AI dengan YOLOv8:</h4>
+            <pre><code>python3 main_cv.py --source sample_traffic.mp4 --model yolov8n.pt --output output_detected.mp4</code></pre>
+          </div>
+
+          <div class="cli-block">
+            <h4>Menghubungkan ke CCTV RTSP Streaming:</h4>
+            <pre><code>python3 main_cv.py --source "rtsp://admin:password@192.168.1.100:554/live" --model yolo11n.pt</code></pre>
+          </div>
+
+          <div class="cli-block">
+            <h4>Contoh Payload Telemetri Real-Time (JSON / MQTT):</h4>
+            <pre><code>{
+  "intersection_id": "SIMPANG_01",
+  "model": "yolo11n.pt",
+  "fps": 32.4,
+  "lanes": {
+    "north": { "motorcycle": 12, "car": 4, "bus": 1, "smp": 9.8, "green_target_sec": 40 },
+    "east":  { "motorcycle": 2,  "car": 1, "bus": 0, "smp": 1.6, "green_target_sec": 12 }
+  },
+  "ambulance_detected": false
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/traffic-model.js"></script>
+  <script src="js/adaptive-engine.js"></script>
+  <script src="js/simulation-canvas.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
